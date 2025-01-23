@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres-container
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    command: apt update && apt install postgis postgresql-17-postgis-3
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    ports:
+      - "127.0.0.1:${CLICKHOUSE_PORT}:8123"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-config:/etc/clickhouse-server
+    
+volumes:
+  pg_data:
+  logs:
+  clickhouse-data:
+  clickhouse-config:
