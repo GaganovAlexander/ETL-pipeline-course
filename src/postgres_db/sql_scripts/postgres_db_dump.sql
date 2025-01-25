@@ -1,4 +1,3 @@
---Users block 
 CREATE TABLE IF NOT EXISTS roles (
     id SERIAL PRIMARY KEY,
     name VARCHAR(32) UNIQUE NOT NULL,
@@ -32,7 +31,6 @@ CREATE TABLE IF NOT EXISTS admin_privileges (
 );
 
 
---Products block
 CREATE TABLE IF NOT EXISTS categories (
     id BIGSERIAL PRIMARY KEY,
     category_name VARCHAR(256) NOT NULL,
@@ -50,7 +48,6 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 
---Pick-up points table
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE IF NOT EXISTS pick_up_points (
@@ -60,7 +57,6 @@ CREATE TABLE IF NOT EXISTS pick_up_points (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
---Orders block
 CREATE TABLE IF NOT EXISTS order_statuses (
     id SERIAL PRIMARY KEY,
     name VARCHAR(128),
@@ -85,7 +81,6 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 
---Payments block
 CREATE TABLE IF NOT EXISTS payments_statuses (
     id SERIAL PRIMARY KEY,
     name VARCHAR(128),
@@ -105,7 +100,6 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 
 
---reviews table
 CREATE TABLE IF NOT EXISTS reviews (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
@@ -122,7 +116,6 @@ CREATE TABLE IF NOT EXISTS review_attachments (
     CONSTRAINT review_attachments_pk PRIMARY KEY (review_id, file_url)
 );
 
---Logs table
 CREATE TABLE IF NOT EXISTS change_logs (
 id BIGSERIAL PRIMARY KEY,
 entity_name VARCHAR(64) NOT NULL,
@@ -134,5 +127,3 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
 updated_by_id BIGINT NOT NULL,
 change_type VARCHAR(128)
 );
---If we delete value - new_value = NULL, change_type = delete
---If we delete whole row - old_value = json of row, new_value = NULL, field_name same as entity_name, change_type = delete

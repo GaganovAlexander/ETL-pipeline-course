@@ -1,4 +1,12 @@
-def roles(conn, cur):
+from mimesis import Generic
+
+from src.postgres_db import conn, cur
+
+
+generic = Generic('ru')
+
+
+def roles():
     cur.execute("""
                 --sql
                 INSERT INTO roles(name) VALUES 
@@ -8,7 +16,7 @@ def roles(conn, cur):
             """)
     conn.commit()
 
-def users(conn, cur, generic):
+def users():
     cur.execute('SELECT MIN(id) FROM roles;')
     role_ids = cur.fetchall()[0]
 
@@ -28,7 +36,7 @@ def users(conn, cur, generic):
             role))
     conn.commit()
 
-def categories(conn, cur, generic):
+def categories():
     for _ in range(10):
         cur.execute(f"""
             --sql
@@ -39,7 +47,7 @@ def categories(conn, cur, generic):
         cur.execute(f"""
             --sql
             INSERT INTO categories(name, parent_category_id) VALUES(%s, %s);
-        """, (generic.text.word(), generic.random.randint(1, 10)))
+        """, (generic.text.word().random.randint(1, 10)))
         
     conn.commit()
 
@@ -47,7 +55,7 @@ def categories(conn, cur, generic):
 def random_price(generic):
     return round(generic.random.random()*generic.random.randint(100, 100_000), 2)
 
-def products(conn, cur, generic):
+def products():
     cur.execute('SELECT MIN(id), MAX(id) FROM categories;')
     category_ids = cur.fetchall()[0]
 
@@ -62,7 +70,7 @@ def products(conn, cur, generic):
             generic.datetime.datetime()))
     conn.commit()
 
-def pick_up_points(conn, cur, generic):
+def pick_up_points():
     for _ in range(100):
         cur.execute("""
             --sql
@@ -73,7 +81,7 @@ def pick_up_points(conn, cur, generic):
             generic.datetime.datetime()))
     conn.commit()
 
-def order_statuses(conn, cur):
+def order_statuses():
     cur.execute("""
             --sql
             INSERT INTO order_statuses(name) VALUES 
@@ -88,7 +96,7 @@ def order_statuses(conn, cur):
         """)
     conn.commit()
 
-def orders(conn, cur, generic):
+def orders():
     cur.execute('SELECT MIN(id), MAX(id) FROM users;')
     user_ids = cur.fetchall()[0]
 
@@ -109,7 +117,7 @@ def orders(conn, cur, generic):
             generic.datetime.datetime()))
     conn.commit()
 
-def order_items(conn, cur, generic):
+def order_items():
     cur.execute('SELECT MIN(id), MAX(id) FROM users;')
     user_ids = cur.fetchall()[0]
 
@@ -132,7 +140,7 @@ def order_items(conn, cur, generic):
             random_price()))
     conn.commit()
 
-def payments_statuses(conn, cur):
+def payments_statuses():
     cur.execute("""
                 --sql
                 INSERT INTO payments_statuses(name) VALUES 
@@ -142,7 +150,7 @@ def payments_statuses(conn, cur):
             """)
     conn.commit()
 
-def payments_methods(conn, cur):
+def payments_methods():
     cur.execute("""
                 --sql
                 INSERT INTO payments_methods(name) VALUES 
@@ -152,7 +160,7 @@ def payments_methods(conn, cur):
             """)
     conn.commit()
 
-def payments(conn, cur, generic):
+def payments():
     cur.execute('SELECT MIN(id), MAX(id) FROM orders;')
     order_ids = cur.fetchall()[0]
 
@@ -173,7 +181,7 @@ def payments(conn, cur, generic):
             generic.datetime.datetime()))
     conn.commit()
 
-def reviews(conn, cur, generic):
+def reviews():
     cur.execute('SELECT MIN(id), MAX(id) FROM users;')
     user_ids = cur.fetchall()[0]
 
@@ -191,7 +199,7 @@ def reviews(conn, cur, generic):
             generic.datetime.datetime()))
     conn.commit()
 
-def review_attachments(conn, cur, generic):
+def review_attachments():
     cur.execute('SELECT MIN(id), MAX(id) FROM reviews;')
     review_ids = cur.fetchall()[0]
 
@@ -207,7 +215,7 @@ def review_attachments(conn, cur, generic):
             generic.random.randint(512, 20*1024)))
     conn.commit()
 
-def change_logs(conn, cur, generic):
+def change_logs():
     cur.execute('SELECT MIN(id), MAX(id) FROM users;')
     user_ids = cur.fetchall()[0]
 

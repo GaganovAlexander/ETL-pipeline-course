@@ -1,18 +1,15 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres:latest
+    image: postgis/postgis:latest
     container_name: postgres-container
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "127.0.0.1:${POSTGRES_PORT}:5432"
+      - "0.0.0.0:${POSTGRES_PORT}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
-    command: apt update && apt install postgis postgresql-17-postgis-3
 
   clickhouse:
     image: clickhouse/clickhouse-server:latest
@@ -22,9 +19,49 @@ services:
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-config:/etc/clickhouse-server
-    
+
+  airflow-postgres:
+    image: postgres:latest
+    container_name: airflow-postgres
+    environment:
+      POSTGRES_USER: airflow_user
+      POSTGRES_PASSWORD: airflow_password
+      POSTGRES_DB: airflow_db
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - airflow_pg_data:/var/lib/postgresql/data
+
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: custom_airflow:latest
+    container_name: airflow
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow_user:airflow_password@airflow-postgres:5432/airflow_db
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/dags/src
+    depends_on:
+      - airflow-postgres
+    command: >
+      bash -c "
+      airflow db migrate && \
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com && \
+      airflow scheduler & \
+      airflow webserver"
+
+
 volumes:
   pg_data:
   logs:
   clickhouse-data:
   clickhouse-config:
+  airflow_pg_data:
