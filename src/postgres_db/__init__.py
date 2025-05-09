@@ -1,6 +1,6 @@
 import psycopg2 as pg
 
-from src.configs import POSTGRES_URL, POSTGRES_PORT, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, WORKING_DIR
+from src.configs import POSTGRES_URL, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, WORKING_DIR
 
 
 conn = pg.connect(

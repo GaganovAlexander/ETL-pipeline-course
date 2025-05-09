@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     role_id INT REFERENCES roles(id) ON DELETE SET NULL,
     CONSTRAINT email_format CHECK (email ~ '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'),
-    CONSTRAINT phone_format CHECK (phone_number ~ '^(\\+7|8)\\d{10}$')
+    CONSTRAINT phone_format CHECK (phone_number ~ '^(\+7|8)\d{10}$')
 );
 CREATE TABLE IF NOT EXISTS admin_privileges (
     id BIGSERIAL PRIMARY KEY,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS admin_privileges (
 
 CREATE TABLE IF NOT EXISTS categories (
     id BIGSERIAL PRIMARY KEY,
-    category_name VARCHAR(256) NOT NULL,
+    name VARCHAR(256) NOT NULL,
     parent_category_id BIGINT REFERENCES categories(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS products (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(256) NOT NULL,
     description VARCHAR(1024),
-    price MONEY,
+    price NUMERIC,
     category_id BIGINT REFERENCES categories(id) ON DELETE SET NULL,
     stock_quantity INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     product_id BIGINT REFERENCES products(id) ON DELETE SET NULL,
     seller_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     quantity INT,
-    price_at_time_of_order FLOAT,
+    price_at_time_of_order NUMERIC,
     CONSTRAINT order_items_pk PRIMARY KEY (order_id, product_id, seller_id),
     CONSTRAINT quantity_positivity_check CHECK (quantity > 0),
     CONSTRAINT price_at_time_of_order_positivity_check CHECK (price_at_time_of_order > 0)

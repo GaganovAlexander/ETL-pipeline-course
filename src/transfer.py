@@ -5,7 +5,7 @@ from src.clickhouse_db import client
 def transfer_products():
     cur.execute("""
         --sql
-        SELECT p.name, p.description, p.price::float, c.category_name, p.stock_quantity, p.created_at
+        SELECT p.name, p.description, p.price, c.name as category_name, p.stock_quantity, p.created_at
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id;
     """)
@@ -52,18 +52,27 @@ def transfer_orders():
 def transfer_payments():
     cur.execute("""
         --sql
-        SELECT 
-            os.name AS order_status, 
+        SELECT
+			o.status_id AS order_status_id,
+            MAX(os.name) AS order_status_name, 
+                
             SUM(oi.price_at_time_of_order * oi.quantity) AS order_cost, 
             COUNT(*) AS order_items_count, 
-            p.status_id, 
-            p.method_id, 
+                
+            p.status_id AS payments_status_id, 
+			MAX(ps.name) AS payment_status_name,
+                
+            p.method_id AS payment_method_id, 
+			MAX(pm.name) AS payment_method_name,
+                
             p.created_at
         FROM payments p
         LEFT JOIN orders o ON p.order_id = o.id
         LEFT JOIN order_statuses os ON o.status_id = os.id
         LEFT JOIN order_items oi ON o.id = oi.order_id
-        GROUP BY os.name, p.status_id, p.method_id, p.created_at;
+		LEFT JOIN payments_statuses ps ON p.status_id = ps.id
+		LEFT JOIN payments_methods pm ON p.method_id = pm.id
+        GROUP BY o.status_id, p.status_id, p.method_id, p.created_at;
     """)
     data = cur.fetchall()
 
@@ -71,7 +80,7 @@ def transfer_payments():
     client.insert(
         "payments",
         data,
-        column_names=["order_status", "order_cost", "order_items_count", "status_id", "method_id", "created_at"]
+        column_names=["order_status_id", "order_status_name", "order_cost", "order_items_count", "payment_status_id", "payment_status_name", "payment_method_id", "payment_method_name", "created_at"]
     )
 
 def transfer_reviews():
@@ -79,7 +88,7 @@ def transfer_reviews():
         --sql
         SELECT 
             r.user_id, 
-            r.product_id, 
+            MAX(p.name) as product_name, 
             r.rating, 
             r.comment, 
             COUNT(ra.file_url) AS attachments_count, 
@@ -88,6 +97,7 @@ def transfer_reviews():
             r.created_at
         FROM reviews r
         LEFT JOIN review_attachments ra ON r.id = ra.review_id
+        LEFT JOIN products p ON r.product_id = p.id
         GROUP BY r.id;
     """)
     data = cur.fetchall()
@@ -96,7 +106,7 @@ def transfer_reviews():
     client.insert(
         "reviews",
         data,
-        column_names=["user_id", "product_id", "rating", "comment", "attachments_count", "has_photo", "has_video", "created_at"]
+        column_names=["user_id", "product_name", "rating", "comment", "attachments_count", "has_photo", "has_video", "created_at"]
     )
 
 def transfer_change_logs():

@@ -1,88 +1,127 @@
-# ETL Pipeline for PostgreSQL to ClickHouse
+# ETL Pipeline for PostgreSQL to ClickHouse with Superset Dashboard
 
-This project implements an ETL pipeline that collects and restructures data from a PostgreSQL database, loads it into ClickHouse, and generates statistics and visualizations. The pipeline is orchestrated using Apache Airflow and containerized with Docker Compose.
+This project implements a complete ETL pipeline that collects, transforms, and loads data from a PostgreSQL database into ClickHouse, and provides interactive analytics through Apache Superset dashboards. The workflow is orchestrated with Apache Airflow and containerized using Docker Compose.
 
-## Project Overview
+---
 
-The pipeline is designed for a mock e-commerce database that includes information about products, reviews, and delivery points. The main objectives of the project are:
+## 🔍 Project Overview
 
-- **Data Transformation and Loading**: Extract data from PostgreSQL and load it into ClickHouse.
-- **Statistics and Visualizations**: Build statistics on popular products, reviews, delivery point usage, and other key business metrics.
-- **Scheduling**: Run the pipeline either manually or on a scheduled basis (daily, weekly, monthly, quarterly, yearly).
+- **Source:** PostgreSQL mock e-commerce database (products, orders, reviews, deliveries).
+- **Warehouse:** ClickHouse for high-performance analytics.
+- **Orchestration:** Apache Airflow for scheduling and managing ETL tasks.
+- **Visualization:** Apache Superset dashboards.
+- **Deployment:** Docker Compose for easy setup of all components.
 
-### Main Tools Used:
+### Main Objectives
 
-- **PostgreSQL**: Source database containing e-commerce data.
-- **ClickHouse**: Data warehouse used for storing and analyzing data.
-- **Apache Airflow**: Workflow scheduler and orchestrator for running ETL tasks.
-- **Docker & Docker Compose**: Containerization for easy deployment of all components.
-- **Plotly / ClickHouse**: Visualization of business metrics.
+1. **Extract, Transform, Load:** Move and reshape data from PostgreSQL into ClickHouse.
+2. **Statistics & Insights:** Build key business metrics (sales, reviews, inventory) in ClickHouse.
+3. **Dashboard Analytics:** Visualize metrics in Superset dashboards.
+4. **Scheduling & Automation:** Run ETL on custom schedules (daily, weekly, etc.) via Airflow.
 
+---
 
-## Installation
+## 🛠️ Technology Stack
 
-1. Clone the repository:
+| Component          | Purpose                                              |
+|--------------------|------------------------------------------------------|
+| PostgreSQL         | Source e-commerce OLTP database                      |
+| ClickHouse         | Columnar data warehouse for analytics                |
+| Apache Airflow     | Workflow orchestration (DAGs for ETL & test data)    |
+| Docker & Compose   | Containerization of all services                     |
+| Apache Superset    | BI tool for interactive dashboards                   |
 
+---
+
+## 🚀 Installation & Setup
+
+1. **Clone the repository**
    ```bash
    git clone https://github.com/GaganovAlexander/ETL-pipeline-course.git
    cd ETL-pipeline-course
    ```
-2. Build and start services using Docker Compose:
-```bash
-docker-compose up --build
-```
-This command will start the following containers:
 
-- **PostgreSQL**: A PostgreSQL container with the mock e-commerce database.
-- **ClickHouse**: A ClickHouse container for data warehouse operations.
-- **Airflow**: An Apache Airflow container for task orchestration.
-- **Nginx**: A reverse proxy to access the Airflow web interface.
-3. Access the Airflow web interface at http://localhost:8080. The default credentials are:
-- **Username:** ```admin```
-- **Password:** ```admin```
-4. You can trigger the ETL pipeline manually or set it to run on a schedule via the Airflow web UI.
+2. **Start all services** (PostgreSQL, ClickHouse, Airflow, Superset, Nginx)
 
-## DAGs
-### Main DAG
-The **main DAG** is responsible for transferring data from PostgreSQL to ClickHouse. It runs as scheduled or manually and performs the following tasks:
+   ```bash
+   docker-compose up --build
+   ```
+3. **Create ClickHouse database after it loaded:**
+   ```bash
+   chmod +x init_clickhouse.sh
+   ./init_clickhouse.sh
+   ```
+   p.s. needed after first boot only
+4. **Access services:**
 
-1. Extract data from PostgreSQL.
-2. Transform and clean the data.
-3. Load the data into ClickHouse.
-4. Build statistics and visualizations on the transferred data.
-### Test DAG
-The **test DAG** generates artificial data to simulate transactions, reviews, and deliveries for testing the pipeline. It runs once to populate the database with test data.
+   * Airflow UI: [http://localhost:8080](http://localhost:8080) (default **admin/admin**)
+   * Superset UI: [http://localhost:8088](http://localhost:8088) (create admin via `docker exec` instructions)
+5. **Trigger pipelines:**
 
-## Configuration
+   * Airflow → transfer_dag → run manually or schedule.
+   * Airflow → create_data_dag → generate sample data.
+
+---
+
+## 📑 DAGs
+
+### 1. Main ETL DAG (transfer_dag)
+
+Performs data movement and transformation:
+
+1. Extract from PostgreSQL.
+2. Clean & transform data.
+3. Load into ClickHouse tables.
+4. Precompute summary tables for Superset.
+
+### 2. Test Data DAG (create_data_dag)
+
+Generates artificial orders, reviews, and deliveries to validate pipeline.
+
+---
+
+## 🔧 Configuration
+
 ### PostgreSQL
-The PostgreSQL database is set up with an e-commerce schema that follows the 6th normal form, with all data integrity issues handled during the insertion phase. The database includes tables for products, reviews, deliveries, and order information.
+
+* Contains normalized e-commerce schema (products, orders, reviews, deliveries).
+* Data integrity handled during ingestion.
+
 ### ClickHouse
-ClickHouse stores the transformed data for efficient querying and analysis. The schema is designed to allow fast aggregation and filtering of large volumes of data.
-### Airflow
-Airflow is used to orchestrate the ETL tasks. Two DAGs are included:
-- **The main DAG** for the regular ETL process.
-- **The test DAG** for generating artificial data.
 
-### Docker
-All components (PostgreSQL, ClickHouse, Airflow, Nginx) are containerized using Docker. The ```docker-compose.yml``` file defines the services and their dependencies.
+* MergeTree tables optimized for time-series and high-cardinality joins.
+* Summary tables and materialized views for dashboard performance.
 
-## Usage
-1. **Trigger the ETL pipeline manually:** Access the Airflow web interface and trigger the main DAG to start the ETL process.
-2. **Schedule the pipeline:** Set up the DAG to run on a schedule (daily, weekly, etc.) via the Airflow web interface.
-3. **Monitor task execution:** Use the Airflow web interface to monitor task execution, review logs, and troubleshoot any issues.
+### Apache Airflow
 
-## Visualizations
-Once the data is loaded into ClickHouse, you can use ClickHouse's native visualization tools or connect with Plotly to create and display statistics, such as:
-- Popular products.
-- Review analytics.
-- Delivery point usage.
-- Revenue metrics.
+* Two DAGs deployed: *transfer\_dag*, *create\_data\_dag*.
+* Use `schedule_interval` to control run frequency.
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/GaganovAlexander/ETL-pipeline-course/blob/main/LICENSE) file for details.
+### Apache Superset
 
-## Acknowledgements
-- [Apache Airflow](https://airflow.apache.org)
-- [ClickHouse](https://clickhouse.com)
-- [Docker](https://www.docker.com)
-- [PostgreSQL](https://www.postgresql.org)
+* Preconfigured datasources pointing to ClickHouse.
+
+---
+
+## 🎯 Usage
+
+1. **Run ETL**: Trigger the `etl_pipeline` DAG in Airflow.
+2. **Populate Test Data**: Trigger the `generate_test_data` DAG.
+3. **Explore Dashboards**: Log into Superset and open the pre-built dashboards.
+4. **Customize**: Add new charts or filters using Superset’s UI.
+
+---
+
+## ⚖️ License
+
+This project is licensed under the MIT License. See [LICENSE](https://github.com/GaganovAlexander/ETL-pipeline-course/blob/main/LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgements
+
+* [Apache Airflow](https://airflow.apache.org)
+* [ClickHouse](https://clickhouse.com)
+* [Apache Superset](https://superset.apache.org)
+* [Docker](https://www.docker.com)
+* [PostgreSQL](https://www.postgresql.org)

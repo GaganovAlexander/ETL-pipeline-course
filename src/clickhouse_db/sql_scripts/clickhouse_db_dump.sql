@@ -1,6 +1,6 @@
 CREATE TABLE products (
     name String,
-    description String,
+    description Nullable(String),
     price Float64,
     category_name String,
     stock_quantity UInt64,
@@ -24,19 +24,22 @@ PARTITION BY status_id
 ORDER BY created_at;
 
 CREATE TABLE payments (
-    order_status String,
+    order_status_id UInt64,
+    order_status_name String,
     order_cost Float,
-    order_items_cout UInt64,
-    status_id UInt64,
-    method_id UInt64,
+    order_items_count UInt64,
+    payment_status_id UInt64,
+    payment_status_name String,
+    payment_method_id UInt64,
+    payment_method_name String,
     created_at DateTime
 ) ENGINE = MergeTree()
-PARTITION BY tuple(status_id, method_id)
+PARTITION BY tuple(payment_status_id, payment_method_id)
 ORDER BY created_at;
 
 CREATE TABLE reviews (
     user_id UInt64,
-    product_id UInt64,
+    product_name String,
     rating Int32,
     comment String,
     attachments_count UInt32,

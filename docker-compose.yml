@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgis/postgis:latest
+    platform: linux/amd64
     container_name: postgres-container
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -19,6 +20,11 @@ services:
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-config:/etc/clickhouse-server
+    environment:
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}     
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-my_secret_password}
+      - CLICKHOUSE_DEFAULT_USER=${CLICKHOUSE_USER:-default}
 
   airflow-postgres:
     image: postgres:latest
@@ -35,7 +41,7 @@ services:
   airflow:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.airflow
     image: custom_airflow:latest
     container_name: airflow
     environment:
@@ -53,11 +59,50 @@ services:
       - airflow-postgres
     command: >
       bash -c "
-      airflow db migrate && \
+      rm -f /opt/airflow/airflow-webserver.pid && \
+      airflow db init && \
       airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com && \
       airflow scheduler & \
       airflow webserver"
 
+  superset:
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
+    container_name: superset
+    ports:
+      - "8088:8088"
+    environment:
+      SUPERSET_SECRET_KEY: 'a_random_long_secret_key'
+      DATABASE_URL: postgresql+psycopg2://superset:superset@superset_db:5432/superset
+      REDIS_URL: redis://superset_redis:6379/0
+    volumes:
+      - superset_home:/app/superset_home
+    depends_on:
+      - superset_db
+      - superset_redis
+    restart: always
+    command: >
+      /bin/bash -c "
+      superset db upgrade &&
+      superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@superset.com --password admin &&
+      superset init &&
+      superset run -h 0.0.0.0 -p 8088"
+
+  superset_db:
+    image: postgres:15
+    container_name: superset_db
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+    volumes:
+      - superset_db_data:/var/lib/postgresql/data
+
+  superset_redis:
+    image: redis:latest
+    container_name: superset_redis
+  
 
 volumes:
   pg_data:
@@ -65,3 +110,5 @@ volumes:
   clickhouse-data:
   clickhouse-config:
   airflow_pg_data:
+  superset_home:
+  superset_db_data:
